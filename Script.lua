@@ -348,7 +348,7 @@ function UI.icon(kind, parent_, color, size)
 end
 function UI.button(o)
     local S = STYLES[o.style or "dark"]
-    local b = new("TextButton", {
+        local b = new("TextButton", {
         Parent = o.parent, Size = o.size, BackgroundColor3 = S.bg, BackgroundTransparency = S.bgT,
         AutoButtonColor = false, Text = "", BorderSizePixel = 0, LayoutOrder = o.order or 0,
     })
@@ -505,7 +505,200 @@ function UI.modal(host)
         TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 102,
     })
     local left = makeButton({
-        parent = box, text = "Volver", size = UDim2.frlocal searchIcon = UI.icon("search", inputBox, IC.soft, 15)
+        parent = box, text = "Volver", size = UDim2.fromOffset(129, 34),
+        pos = UDim2.fromOffset(14, 94), style = "dark", textSize = 13,
+    })
+    local right = makeButton({
+        parent = box, text = "Aceptar", size = UDim2.fromOffset(129, 34),
+        pos = UDim2.fromOffset(157, 94), style = "danger", textSize = 13,
+    })
+    for _, d in ipairs(box:GetDescendants()) do
+        if d:IsA("GuiObject") and d.ZIndex < 102 then d.ZIndex = 102 end
+    end
+    local m = {}
+    local cbLeft, cbRight
+    local showToken = 0
+    function m.show(o)
+        showToken = showToken + 1
+        title.Text = o.title or ""
+        text.Text = o.text or ""
+        left.label.Text = o.leftText or "Volver"
+        right.label.Text = o.rightText or "Aceptar"
+        left.setStyle(o.leftStyle or "dark")
+        right.setStyle(o.rightStyle or "danger")
+        cbLeft, cbRight = o.onLeft, o.onRight
+        overlay.Visible = true
+        tween(overlay, TweenInfo.new(0.2), { BackgroundTransparency = 0.45 })
+        scale.Scale = 0.9
+        tween(scale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+    end
+    function m.hide()
+        showToken = showToken + 1
+        local my = showToken
+        tween(scale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Scale = 0.9 })
+        local t = tween(overlay, TweenInfo.new(0.18), { BackgroundTransparency = 1 })
+        t.Completed:Connect(function()
+            if showToken == my then overlay.Visible = false end
+        end)
+    end
+    left.btn.MouseButton1Click:Connect(function()
+        m.hide()
+        if cbLeft then cbLeft() end
+    end)
+    right.btn.MouseButton1Click:Connect(function()
+        m.hide()
+        if cbRight then cbRight() end
+    end)
+    return m
+end
+local W, H = 540, 330
+local vp0 = UI.viewport()
+local BASE = math.min(1, (vp0.Y - 24) / H, (vp0.X - 24) / W)
+local Root = new("Frame", {
+    Parent = gui, BackgroundTransparency = 1, Active = true,
+    Size = UDim2.fromOffset(W * BASE, H * BASE),
+    Position = UDim2.fromOffset(math.floor((vp0.X - W * BASE) / 2), math.floor((vp0.Y - H * BASE) / 2)),
+    Visible = false,
+})
+local Window = new("CanvasGroup", {
+    Parent = Root, AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(W, H),
+    BackgroundColor3 = BLACK, BackgroundTransparency = 0, BorderSizePixel = 0,
+    Active = true, GroupTransparency = 1,
+})
+corner(Window, 8)
+local winStroke = stroke(Window, WHITE, 1.2, 0.2)
+grad(winStroke, IC.gold, IC.btnLine, 60)
+local winScale = new("UIScale", { Parent = Window, Scale = BASE * 0.6 })
+local bgScale = UI.background(Window, 0.5)
+local TopBar = new("Frame", {
+    Parent = Window, Size = UDim2.new(1, 0, 0, 42), BackgroundTransparency = 1,
+})
+local headLine = new("Frame", {
+    Parent = Window, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 42),
+    Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = IC.gold, BorderSizePixel = 0,
+})
+new("UIGradient", {
+    Parent = headLine,
+    Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.5, 0.3),
+        NumberSequenceKeypoint.new(1, 1),
+    }),
+})
+local dragArea = new("Frame", {
+    Parent = TopBar, Size = UDim2.new(1, -86, 1, 0), BackgroundTransparency = 1, Active = true,
+})
+local logo = new("Frame", {
+    Parent = TopBar, Position = UDim2.fromOffset(12, 8), Size = UDim2.fromOffset(26, 26),
+    BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true,
+})
+corner(logo, 8)
+local logoImg = new("ImageLabel", {
+    Parent = logo, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+    ScaleType = Enum.ScaleType.Crop, Image = "", BorderSizePixel = 0, ImageTransparency = 1,
+})
+corner(logoImg, 8)
+UI.logo(logoImg)
+local titleMain = new("TextLabel", {
+    Parent = TopBar, Position = UDim2.fromOffset(48, 3), Size = UDim2.fromOffset(330, 24),
+    BackgroundTransparency = 1, Text = "Pxzd hub premium user", Font = Enum.Font.Garamond,
+    TextSize = 22, TextColor3 = WHITE, TextXAlignment = Enum.TextXAlignment.Left,
+    TextStrokeTransparency = 0.88, TextStrokeColor3 = BLACK,
+})
+grad(titleMain, IC.title, IC.titleLow, 90)
+new("TextLabel", {
+    Parent = TopBar, Position = UDim2.fromOffset(48, 25), Size = UDim2.fromOffset(330, 14),
+    BackgroundTransparency = 1, Text = "Premium", Font = Enum.Font.Garamond,
+    TextSize = 15, TextColor3 = IC.soft, TextXAlignment = Enum.TextXAlignment.Left,
+})
+local btnMin = UI.winButton(TopBar, "min", -44, IC.gold)
+local btnClose = UI.winButton(TopBar, "close", -10, T.red)
+UI.draggable(dragArea, Root)
+local Left = new("Frame", {
+    Parent = Window, Position = UDim2.fromOffset(10, 52), Size = UDim2.fromOffset(190, 268),
+    BackgroundColor3 = IC.btnBg, BackgroundTransparency = 0.4, BorderSizePixel = 0,
+})
+corner(Left, 6)
+stroke(Left, IC.btnLine, 1, 0.65)
+local previewHolder = new("Frame", {
+    Parent = Left, Position = UDim2.fromOffset(10, 10), Size = UDim2.fromOffset(170, 170),
+    BackgroundColor3 = IC.btnBg, BackgroundTransparency = 0.35, BorderSizePixel = 0, ClipsDescendants = true,
+})
+corner(previewHolder, 6)
+local prevStroke = stroke(previewHolder, WHITE, 1, 0.3)
+grad(prevStroke, IC.gold, IC.btnLine, 45)
+local previewContent = new("Frame", {
+    Parent = previewHolder, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
+})
+local previewHint = new("TextLabel", {
+    Parent = previewHolder, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+    Text = "Sin seleccion", Font = Enum.Font.GothamMedium, TextSize = 12, TextColor3 = IC.soft,
+})
+local nameLabel = new("TextLabel", {
+    Parent = Left, Position = UDim2.fromOffset(10, 188), Size = UDim2.fromOffset(170, 20),
+    BackgroundTransparency = 1, Text = "-", Font = Enum.Font.GothamBold, TextSize = 14,
+    TextColor3 = IC.title, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+})
+local idChip = new("Frame", {
+    Parent = Left, Position = UDim2.fromOffset(10, 210), Size = UDim2.fromOffset(0, 16),
+    AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = IC.btnBgMain, BackgroundTransparency = 0.45,
+    BorderSizePixel = 0,
+})
+corner(idChip, 4)
+new("UIPadding", { Parent = idChip, PaddingLeft = UDim.new(0, 7), PaddingRight = UDim.new(0, 7) })
+local idLabel = new("TextLabel", {
+    Parent = idChip, Size = UDim2.fromOffset(0, 16), AutomaticSize = Enum.AutomaticSize.X,
+    BackgroundTransparency = 1, Text = "-", Font = Enum.Font.GothamMedium, TextSize = 10,
+    TextColor3 = IC.gold,
+})
+local btnMove = makeButton({
+    parent = Left, text = "> Pistolas", size = UDim2.fromOffset(78, 18),
+    pos = UDim2.fromOffset(102, 209), style = "dark", textSize = 10,
+})
+btnMove.btn.Visible = false
+local statusDot = new("Frame", {
+    Parent = Left, Position = UDim2.fromOffset(12, 238), Size = UDim2.fromOffset(6, 6),
+    BackgroundColor3 = IC.soft, BorderSizePixel = 0,
+})
+corner(statusDot, 3)
+local statusLabel = new("TextLabel", {
+    Parent = Left, Position = UDim2.fromOffset(24, 232), Size = UDim2.fromOffset(156, 24),
+    BackgroundTransparency = 1, Text = "Iniciando...", Font = Enum.Font.Gotham,
+    TextSize = 11, TextColor3 = IC.soft, TextWrapped = true, TextTruncate = Enum.TextTruncate.AtEnd,
+    TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
+})
+local progressTrack = new("Frame", {
+    Parent = Left, Position = UDim2.fromOffset(10, 260), Size = UDim2.fromOffset(170, 3),
+    BackgroundColor3 = IC.btnBg, BackgroundTransparency = 0.3, BorderSizePixel = 0, ClipsDescendants = true,
+})
+corner(progressTrack, 2)
+local progressFill = new("Frame", {
+    Parent = progressTrack, Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = WHITE, BorderSizePixel = 0,
+})
+corner(progressFill, 2)
+grad(progressFill, IC.gold, IC.goldLight, 0)
+local function setStatus(text, color)
+    statusLabel.Text = text
+    statusLabel.TextColor3 = color or IC.soft
+    statusDot.BackgroundColor3 = color or IC.soft
+end
+local function setProgress(p)
+    tween(progressFill, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(math.clamp(p, 0, 1), 0, 1, 0),
+    })
+end
+local Right = new("Frame", {
+    Parent = Window, Position = UDim2.fromOffset(210, 52), Size = UDim2.fromOffset(320, 268),
+    BackgroundTransparency = 1,
+})
+local inputBox = new("Frame", {
+    Parent = Right, Size = UDim2.fromOffset(240, 36), BackgroundColor3 = IC.btnBg,
+    BackgroundTransparency = 0.4, BorderSizePixel = 0,
+})
+corner(inputBox, 4)
+local inputStroke = stroke(inputBox, IC.btnLine, 1, 0.55)
+local searchIcon = UI.icon("search", inputBox, IC.soft, 15)
 searchIcon.root.Position = UDim2.fromOffset(10, 10)
 local input = new("TextBox", {
     Parent = inputBox, Position = UDim2.fromOffset(32, 0), Size = UDim2.new(1, -42, 1, 0),
@@ -855,7 +1048,7 @@ local M = (function()
         if c then return c end
         c = catOfContent(t)
         if c then return c end
-        return shapeCat(t)
+                    return shapeCat(t)
     end
     local FX_CLASSES = {
         "ParticleEmitter", "Beam", "Trail", "Fire", "Smoke", "Sparkles", "Explosion",
@@ -999,7 +1192,213 @@ local M = (function()
         end
         return tex, col, col2 or col, #list
     end
-    local fun                        end
+    local function addEffect(inst, out, seen, nameOverride, lib)
+        if not inst or not inst.Parent then return end
+        if inst:IsA("Tool") or inst:IsA("Sound") or inst:IsA("Animation") then return end
+        if not hasFxDeep(inst) then return end
+        local name = nameOverride or inst.Name
+        local key = name:lower()
+        if key == "" or seen[key] then return end
+        local n2 = norm(name)
+        if (hasNameWord(n2, BLADE_SUB) or hasNameWord(n2, GUN_SUB)) and not hasAny(n2, EFFECT_TERMS) then
+            return
+        end
+        if hasWord(n2, SOUND_BAD) then return end
+        seen[key] = true
+        local tex, col, col2, n = fxInfo(inst)
+        out[#out + 1] = {
+            tab = "effects", name = name, lname = key, inst = inst, tex = tex, col = col, col2 = col2,
+            fxCount = n, priority = isPriority(name), lib = lib or false, imgs = {},
+        }
+    end
+    local function findAssetByName(name)
+        if not assetIndex then
+            assetIndex = {}
+            local counter = 0
+            for _, root in ipairs(scanRoots()) do
+                if root ~= workspace then
+                    for _, d in ipairs(root:GetDescendants()) do
+                        counter = counter + 1
+                        if counter % 800 == 0 then task.wait() end
+                        if (d:IsA("Folder") or d:IsA("Model") or d:IsA("BasePart") or d:IsA("Attachment")
+                            or d:IsA("Configuration")) and not skipFx(d) and d.Name ~= "" then
+                            local k = squash(d.Name)
+                            if k ~= "" and not assetIndex[k] and killContent(d) then assetIndex[k] = d end
+                        end
+                    end
+                end
+            end
+        end
+        for _, k in ipairs(nameKeys(name)) do
+            if assetIndex[k] then return assetIndex[k] end
+        end
+        return nil
+    end
+    local KILL_CFG = {
+        match = function(n)
+            if hasWord(n, KILL_BAD) then return false end
+            if not hasAny(n, KILL_NAMES) then return false end
+            if hasAny(n, KILL_FX_TERMS) then return true end
+            return n:find("s$") ~= nil
+        end,
+        content = killContent,
+        plural = function(n)
+            return n:find("s$") ~= nil
+        end,
+        direct = function(c) return isFx(c) end,
+        add = addEffect,
+        values = true,
+        fromValues = function(inst, out, seen)
+            for _, c in ipairs(inst:GetChildren()) do
+                if c:IsA("ValueBase") then
+                    local asset = findAssetByName(c.Name)
+                    if asset then addEffect(asset, out, seen, c.Name) end
+                end
+            end
+        end,
+    }
+    local function scanGeneric(inst, ctx, cfg, out, seen, counter)
+        counter.n = counter.n + 1
+        if counter.n % 400 == 0 then task.wait() end
+        if skipFx(inst) then return end
+        local n = norm(inst.Name)
+        local here = ctx or cfg.match(n)
+        if here and cfg.values then
+            local hasValues = false
+            for _, c in ipairs(inst:GetChildren()) do
+                if c:IsA("ValueBase") then
+                    hasValues = true
+                    break
+                end
+            end
+            if hasValues then cfg.fromValues(inst, out, seen) end
+        end
+        if here and cfg.content(inst) then
+            local plural = cfg.plural(n)
+            local container = false
+            if inst:IsA("Folder") or inst:IsA("Configuration") or inst:IsA("Model") or inst:IsA("BasePart") then
+                local holders, direct = 0, 0
+                for _, c in ipairs(inst:GetChildren()) do
+                    if cfg.direct(c) then
+                        direct = direct + 1
+                    elseif not skipFx(c) and cfg.content(c) then
+                        holders = holders + 1
+                    end
+                end
+                if plural and (holders > 0 or direct > 0) then
+                    container = true
+                elseif not ctx and direct == 0 and holders >= 2
+                    and (inst:IsA("Folder") or inst:IsA("Configuration")) then
+                    container = true
+                end
+            end
+            if container then
+                for _, c in ipairs(inst:GetChildren()) do
+                    if cfg.direct(c) then
+                        cfg.add(c, out, seen)
+                    else
+                        scanGeneric(c, true, cfg, out, seen, counter)
+                    end
+                end
+            else
+                cfg.add(inst, out, seen)
+            end
+            return
+        end
+        for _, c in ipairs(inst:GetChildren()) do
+            scanGeneric(c, ctx, cfg, out, seen, counter)
+        end
+    end
+    local function priorityScan(all, out, seen)
+        local p1, p2 = {}, {}
+        for i, inst in ipairs(all) do
+            if i % 1200 == 0 then task.wait() end
+            local n = inst.Name:lower()
+            if (n:find("hip", 1, true) or n:find("hyp", 1, true)) and isPriority(n) and not seen[n] and not skipFx(inst) then
+                if inst:IsA("ValueBase") then
+                    local asset = findAssetByName(inst.Name)
+                    if not asset then
+                        local okv, v = pcall(function() return inst.Value end)
+                        if okv and type(v) == "string" and v ~= "" then asset = findAssetByName(v) end
+                    end
+                    if asset then addEffect(asset, out, seen, inst.Name) end
+                elseif inst:IsA("Folder") or inst:IsA("Model") or inst:IsA("Configuration")
+                    or inst:IsA("BasePart") or inst:IsA("Attachment") then
+                    if killContent(inst) then p1[#p1 + 1] = inst end
+                elseif killContent(inst) then
+                    p2[#p2 + 1] = inst
+                end
+            end
+        end
+        for _, inst in ipairs(p1) do addEffect(inst, out, seen) end
+        for _, inst in ipairs(p2) do addEffect(inst, out, seen) end
+    end
+    local LIB_NAMES = {
+        "effect", "efecto", "fx", "vfx", "particle", "particles",
+        "kill", "kills", "killeffect", "killeffects",
+        "finisher", "finishers", "execution", "executions",
+        "death", "deaths", "dying", "slay", "slays", "fatal",
+        "cosmetic", "cosmetics", "animation", "animations",
+        "skill", "skills",
+    }
+    local function isHolder(c)
+        if isFx(c) then return false end
+        if c:IsA("Folder") or c:IsA("Model") or c:IsA("Attachment") or c:IsA("BasePart") or c:IsA("Configuration") then
+            for _, d in ipairs(c:GetDescendants()) do
+                if isFx(d) then return true end
+            end
+        end
+        return false
+    end
+    local function libraryScan(all, out, seen)
+        for i, inst in ipairs(all) do
+            if i % 800 == 0 then task.wait() end
+            if (inst:IsA("Folder") or inst:IsA("Configuration") or inst:IsA("Model")) and not skipFx(inst) then
+                local n = norm(inst.Name)
+                local nameMatch = hasAny(n, LIB_NAMES) and not hasWord(n, KILL_BAD)
+                local inStorage = not inst:IsDescendantOf(workspace)
+                if nameMatch or inStorage then
+                    local kids = inst:GetChildren()
+                    if #kids >= 2 then
+                        local hold = {}
+                        for _, c in ipairs(kids) do
+                            if isHolder(c) then hold[#hold + 1] = c end
+                        end
+                        local minCount = nameMatch and 2 or 3
+                        local minRatio = nameMatch and 0.5 or 0.7
+                        if #hold >= minCount and (#hold / #kids) >= minRatio then
+                            for _, c in ipairs(hold) do addEffect(c, out, seen, nil, true) end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    local function storageFxScan(all, out, seen)
+        local STORAGE_ROOTS = {}
+        for _, n in ipairs({ "ReplicatedStorage", "ReplicatedFirst", "ServerStorage", "StarterGui", "StarterPack" }) do
+            local ok, s = pcall(function() return game:GetService(n) end)
+            if ok and s then STORAGE_ROOTS[s] = true end
+        end
+        for i, inst in ipairs(all) do
+            if i % 800 == 0 then task.wait() end
+            if (inst:IsA("Folder") or inst:IsA("Configuration") or inst:IsA("Model")) and not skipFx(inst) then
+                local inStorage = false
+                local p = inst.Parent
+                while p do
+                    if STORAGE_ROOTS[p] then
+                        inStorage = true
+                        break
+                    end
+                    p = p.Parent
+                end
+                if inStorage then
+                    local kids = inst:GetChildren()
+                    if #kids >= 3 then
+                        local hold = 0
+                        for _, c in ipairs(kids) do
+                            if isHolder(c) or hasFxDeep(c) then hold = hold + 1 end
+                                                        end
                         if hold >= 3 and (hold / #kids) >= 0.6 then
                             for _, c in ipairs(kids) do
                                 if hasFxDeep(c) then addEffect(c, out, seen, nil, true) end
@@ -1349,7 +1748,7 @@ local M = (function()
             if inst and not wSeen[k] and existsInGame(inst) then
                 local cat = guiCat[k] or classifyWeapon(inst)
                 if not cat then cat = catOfName(inst.Name) end
-                if not cat and inst:IsA("Tool") then cat = catOfContent(inst) end
+                                    if not cat and inst:IsA("Tool") then cat = catOfContent(inst) end
                 if cat and sizeOk(inst) and not looksLikeProp(inst) then
                     if pushWeapon(inst, cat, wOut, wSeen, wSig, img) then added = added + 1 end
                 end
@@ -1436,7 +1835,270 @@ local function App()
         for _, p in ipairs(parts) do
             p.Anchored = true
             if p.Transparency < 0.99 then visible[#visible + 1] = p end
-                            pcall(function()
+        end
+        local use = #visible > 0 and visible or parts
+        local mn, mx
+        for _, p in ipairs(use) do
+            local cf, s = p.CFrame, p.Size
+            local ex = Vector3.new(
+                (math.abs(cf.RightVector.X) * s.X + math.abs(cf.UpVector.X) * s.Y + math.abs(cf.LookVector.X) * s.Z) / 2,
+                (math.abs(cf.RightVector.Y) * s.X + math.abs(cf.UpVector.Y) * s.Y + math.abs(cf.LookVector.Y) * s.Z) / 2,
+                (math.abs(cf.RightVector.Z) * s.X + math.abs(cf.UpVector.Z) * s.Y + math.abs(cf.LookVector.Z) * s.Z) / 2
+            )
+            local lo, hi = cf.Position - ex, cf.Position + ex
+            if not mn then
+                mn, mx = lo, hi
+            else
+                mn = Vector3.new(math.min(mn.X, lo.X), math.min(mn.Y, lo.Y), math.min(mn.Z, lo.Z))
+                mx = Vector3.new(math.max(mx.X, hi.X), math.max(mx.Y, hi.Y), math.max(mx.Z, hi.Z))
+            end
+        end
+        local vf = new("ViewportFrame", {
+            Parent = host, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
+            Ambient = Color3.fromRGB(190, 190, 190), LightColor = Color3.fromRGB(255, 255, 255),
+            LightDirection = Vector3.new(-1, -1, -1),
+        })
+        clone.Parent = vf
+        local cam = Instance.new("Camera")
+        cam.FieldOfView = 40
+        cam.Parent = vf
+        vf.CurrentCamera = cam
+        local center = (mn + mx) / 2
+        local radius = math.max((mx - mn).Magnitude / 2, 0.5)
+        local dist = radius / math.sin(math.rad(20)) * 1.05
+        local dir = Vector3.new(1, 0.5, 1).Unit
+        cam.CFrame = CFrame.lookAt(center + dir * dist, center)
+        if spinOn then
+            Spin.cam, Spin.center, Spin.dist, Spin.ang = cam, center, dist, math.atan2(1, 1)
+        end
+        return vf
+    end
+    local function texCandidates(tex)
+        local out = {}
+        if not tex or tex == "" then return out end
+        local id = tostring(tex):match("(%d%d%d%d%d+)")
+        if id then
+            out[#out + 1] = "rbxthumb://type=Asset&id=" .. id .. "&w=150&h=150"
+            out[#out + 1] = "rbxassetid://" .. id
+        end
+        if tostring(tex) ~= out[2] then out[#out + 1] = tostring(tex) end
+        return out
+    end
+    local function loadImageChain(host, texList, onFail)
+        local img = new("ImageLabel", {
+            Parent = host, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+            ScaleType = Enum.ScaleType.Fit, Image = "", ImageTransparency = 1, BorderSizePixel = 0,
+        })
+        task.spawn(function()
+            local tried = {}
+            local function attempt(c)
+                if tried[c] then return false end
+                tried[c] = true
+                img.Image = c
+                local t0 = os.clock()
+                while img.Parent and os.clock() - t0 < 2.5 do
+                    local okl, loaded = pcall(function() return img.IsLoaded end)
+                    if okl and loaded then return true end
+                    task.wait(0.1)
+                end
+                return false
+            end
+            local function show()
+                tween(img, TweenInfo.new(0.2), { ImageTransparency = 0 })
+            end
+            for _, tex in ipairs(texList) do
+                for _, c in ipairs(texCandidates(tex)) do
+                    if not img.Parent then return end
+                    if attempt(c) then
+                        show()
+                        return
+                    end
+                end
+            end
+            for _, tex in ipairs(texList) do
+                local id = tostring(tex):match("(%d%d%d%d%d+)")
+                if id then
+                    local t2 = textureFromAsset("rbxassetid://" .. id)
+                    if t2 and img.Parent then
+                        for _, c in ipairs(texCandidates(t2)) do
+                            if attempt(c) then
+                                show()
+                                return
+                            end
+                        end
+                    end
+                end
+                break
+            end
+            if img.Parent then
+                img:Destroy()
+                if host.Parent then onFail() end
+            end
+        end)
+    end
+    local function renderVisual(host, entry, big)
+        local isFxTab = entry.tab == "effects"
+        local label = isFxTab and "FX" or (entry.cat == "melee" and "CUCH" or "PIST")
+        local function fallback()
+            if not host.Parent then return end
+            if isFxTab then
+                if not (entry.inst and buildViewport(host, entry.inst, big)) then fxSwatch(host, entry) end
+            else
+                if not buildViewport(host, entry.inst, big) then glyph(host, label) end
+            end
+        end
+        local list
+        if isFxTab then
+            list = entry.imgs
+        elseif entry.tex then
+            list = { entry.tex }
+        end
+        if list and #list > 0 then
+            loadImageChain(host, list, fallback)
+        else
+            fallback()
+        end
+    end
+    track(RunService.Heartbeat:Connect(function(dt)
+        local cam = Spin.cam
+        if not cam or not cam.Parent or not Root.Visible then return end
+        Spin.ang = Spin.ang + dt * 0.9
+        local dir = Vector3.new(math.cos(Spin.ang), 0.45, math.sin(Spin.ang)).Unit
+        cam.CFrame = CFrame.lookAt(Spin.center + dir * Spin.dist, Spin.center)
+    end))
+    local function showSelected(entry)
+        Spin.cam = nil
+        for _, c in ipairs(previewContent:GetChildren()) do c:Destroy() end
+        if not entry then
+            previewHint.Visible = true
+            previewHint.Text = "Sin seleccion"
+            nameLabel.Text = "-"
+            idLabel.Text = "-"
+            updateMove()
+            return
+        end
+        previewHint.Visible = false
+        nameLabel.Text = entry.name
+        if entry.tab == "effects" then
+            local lead = entry.lib and "EFECTO" or "KILL EFFECT"
+            idLabel.Text = lead .. " | " .. tostring(entry.fxCount or 0) .. " fx"
+        else
+            idLabel.Text = entry.cat == "melee" and "CUCHILLO" or "PISTOLA"
+        end
+        renderVisual(previewContent, entry, true)
+        updateMove()
+    end
+    local function mountContent(root, holder, anchor, pivotCF, adornee)
+        local expl = {}
+        local baseCF
+        local function prepPart(p)
+            p.Anchored = false
+            p.CanCollide = false
+            p.CanTouch = false
+            p.CanQuery = false
+            p.Massless = true
+        end
+        local function weldTo(p)
+            local w = Instance.new("WeldConstraint")
+            w.Part0 = p
+            w.Part1 = anchor
+            w.Parent = p
+        end
+        local function attach(inst)
+            if inst:IsA("ParticleEmitter") or inst:IsA("Fire") or inst:IsA("Smoke") or inst:IsA("Sparkles")
+                or inst:IsA("PointLight") or inst:IsA("SpotLight") or inst:IsA("SurfaceLight") or inst:IsA("Sound") then
+                inst.Parent = anchor
+            elseif inst:IsA("Highlight") then
+                pcall(function() inst.Adornee = adornee end)
+                inst.Parent = holder
+            elseif inst:IsA("Beam") or inst:IsA("Trail") then
+                local a0 = Instance.new("Attachment")
+                a0.Position = Vector3.new(0, 1, 0)
+                a0.Parent = anchor
+                local a1 = Instance.new("Attachment")
+                a1.Position = Vector3.new(0, -1, 0)
+                a1.Parent = anchor
+                inst.Attachment0 = a0
+                inst.Attachment1 = a1
+                inst.Parent = anchor
+            elseif inst:IsA("Explosion") then
+                pcall(function()
+                    inst.BlastPressure = 0
+                    inst.DestroyJointRadiusPercent = 0
+                end)
+                expl[#expl + 1] = inst
+            elseif inst:IsA("Attachment") then
+                inst.Parent = anchor
+            elseif inst:IsA("BasePart") then
+                local rel = CFrame.new()
+                if baseCF then
+                    rel = baseCF:Inverse() * inst.CFrame
+                else
+                    baseCF = inst.CFrame
+                end
+                prepPart(inst)
+                for _, d in ipairs(inst:GetDescendants()) do
+                    if d:IsA("BasePart") then prepPart(d) end
+                end
+                inst.CFrame = pivotCF * rel
+                inst.Parent = holder
+                weldTo(inst)
+            elseif inst:IsA("Model") then
+                inst:PivotTo(pivotCF)
+                inst.Parent = holder
+                for _, d in ipairs(inst:GetDescendants()) do
+                    if d:IsA("BasePart") then
+                        prepPart(d)
+                        weldTo(d)
+                    end
+                end
+            elseif inst:IsA("Folder") or inst:IsA("Configuration") then
+                for _, ch in ipairs(inst:GetChildren()) do attach(ch) end
+                pcall(function() inst:Destroy() end)
+            else
+                pcall(function() inst:Destroy() end)
+            end
+        end
+        attach(root)
+        return expl
+    end
+    local function triggerOnce(holder, anchor, expl)
+        local total = 2.5
+        for _, d in ipairs(holder:GetDescendants()) do
+            if d:IsA("ParticleEmitter") then
+                local delay = tonumber(d:GetAttribute("EmitDelay")) or 0
+                local dur = tonumber(d:GetAttribute("EmitDuration")) or 0
+                local count = tonumber(d:GetAttribute("EmitCount")) or 20
+                local life = 1
+                pcall(function() life = d.Lifetime.Max end)
+                if d.Rate > 0 and dur <= 0 then dur = 1.2 end
+                total = math.max(total, delay + dur + life)
+                task.spawn(function()
+                    if delay > 0 then task.wait(delay) end
+                    if not d.Parent then return end
+                    if d.Rate > 0 or dur > 0 then
+                        d.Enabled = true
+                        task.wait(math.max(dur, 0.05))
+                        if d.Parent then d.Enabled = false end
+                    else
+                        pcall(function() d:Emit(count) end)
+                    end
+                end)
+            elseif d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") or d:IsA("PointLight")
+                or d:IsA("SpotLight") or d:IsA("SurfaceLight") or d:IsA("Highlight")
+                or d:IsA("Beam") or d:IsA("Trail") then
+                pcall(function() d.Enabled = true end)
+                total = math.max(total, 3)
+            elseif d:IsA("Sound") then
+                local delay = tonumber(d:GetAttribute("Delay")) or 0
+                pcall(function()
+                    d.Looped = false
+                    d.RollOffMaxDistance = math.max(d.RollOffMaxDistance, 300)
+                    d.RollOffMinDistance = math.max(d.RollOffMinDistance, 40)
+                    if d.Volume < 0.5 then d.Volume = 0.8 end
+                end)
+                local len = 4
+                                pcall(function()
                     if d.TimeLength > 0 then len = d.TimeLength end
                 end)
                 total = math.max(total, math.min(len, 12) + delay)
@@ -1786,7 +2448,7 @@ local function App()
             if doRefresh then SkinLoop.last = now end
             for _, rec in pairs(Applied) do
                 if doRefresh then pcall(refreshRec, rec) end
-                pcall(stepRec, rec)
+                                    pcall(stepRec, rec)
             end
         end)
     end
@@ -1935,7 +2597,208 @@ local function App()
             return v == LocalPlayer or (LocalPlayer.Character ~= nil and v == LocalPlayer.Character)
         end
         if type(v) == "number" then return v == LocalPlayer.UserId end
-        if type(v) == "        if entry.tab == "effects" then
+        if type(v) == "string" then
+            return v == LocalPlayer.Name or v == LocalPlayer.DisplayName or v == tostring(LocalPlayer.UserId)
+        end
+        return false
+    end
+    local function argIsMe(v, depth)
+        if nameIsMe(v) then return true end
+        if type(v) == "table" and depth < 2 then
+            for _, x in pairs(v) do
+                if argIsMe(x, depth + 1) then return true end
+            end
+        end
+        return false
+    end
+    local TAG_NAMES = { "creator", "Creator", "killer", "Killer", "LastAttacker", "LastDamager", "KilledBy" }
+    local function taggedMine(hum, char)
+        for _, holder in ipairs({ hum, char }) do
+            for _, tn in ipairs(TAG_NAMES) do
+                local tag = holder:FindFirstChild(tn)
+                if tag and tag:IsA("ValueBase") then
+                    local okv, val = pcall(function() return tag.Value end)
+                    if okv and nameIsMe(val) then return true end
+                end
+                local attr = holder:GetAttribute(tn)
+                if attr ~= nil and nameIsMe(attr) then return true end
+            end
+        end
+        return false
+    end
+    local function fireKill(d)
+        if d.fired then return end
+        d.fired = true
+        local entry = Kill.entry
+        if not entry then return end
+        if not existsInGame(entry.inst) then
+            setStatus("El efecto ya no existe en el juego.", T.warn)
+            return
+        end
+        Kill.lastFire = os.clock()
+        setStatus("Kill: " .. d.name, T.green)
+        task.spawn(function() pcall(playKillEffect, entry, d) end)
+    end
+    local function tryMatch()
+        local now = os.clock()
+        for i = #Kill.pending, 1, -1 do
+            if now - Kill.pending[i] > 3.5 then table.remove(Kill.pending, i) end
+        end
+        while #Kill.pending > 0 do
+            local credit = Kill.pending[1]
+            local best, bd
+            for _, d in ipairs(Kill.deaths) do
+                if not d.fired and not d.consumed then
+                    local dt = math.abs(d.t - credit)
+                    if dt <= 3.5 and (not bd or dt < bd) then best, bd = d, dt end
+                end
+            end
+            if not best then return end
+            table.remove(Kill.pending, 1)
+            best.consumed = true
+            fireKill(best)
+        end
+    end
+    local function addCredit()
+        local now = os.clock()
+        if now - Kill.lastFire < 2 then return end
+        local last = Kill.pending[#Kill.pending]
+        if last and now - last < 1.2 then return end
+        Kill.pending[#Kill.pending + 1] = now
+        tryMatch()
+    end
+    local function hookCharacter(p, char)
+        task.spawn(function()
+            local hum = char:WaitForChild("Humanoid", 10)
+            if not hum then return end
+            local last = hum.Health
+            local dead = false
+            local function onDead()
+                if dead then return end
+                dead = true
+                local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+                    or char:FindFirstChild("Head")
+                local cf = hrp and hrp.CFrame or CFrame.new(0, 0, 0)
+                local now = os.clock()
+                local d = {
+                    player = p, char = char, cf = cf, t = now, name = p.DisplayName,
+                    fired = false, consumed = false,
+                }
+                Kill.deaths[#Kill.deaths + 1] = d
+                for i = #Kill.deaths, 1, -1 do
+                    if now - Kill.deaths[i].t > 8 then table.remove(Kill.deaths, i) end
+                end
+                if taggedMine(hum, char) then
+                    d.consumed = true
+                    fireKill(d)
+                elseif Kill.hasStat or Kill.hasRemote then
+                    tryMatch()
+                else
+                    local lh = Kill.lastHit[p]
+                    if lh and now - lh < 3 then
+                        d.consumed = true
+                        fireKill(d)
+                    end
+                end
+            end
+            hum.HealthChanged:Connect(function(h)
+                if h < last and os.clock() - Kill.lastAct < 1.5 then
+                    local mine = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    local theirs = char:FindFirstChild("HumanoidRootPart")
+                    if mine and theirs and (mine.Position - theirs.Position).Magnitude < 400 then
+                        Kill.lastHit[p] = os.clock()
+                    end
+                end
+                last = h
+                if h <= 0 then onDead() end
+            end)
+            hum.Died:Connect(onDead)
+        end)
+    end
+    local function hookPlayer(p)
+        if p == LocalPlayer then return end
+        if p.Character then hookCharacter(p, p.Character) end
+        track(p.CharacterAdded:Connect(function(char) hookCharacter(p, char) end))
+    end
+    local KILL_STAT = { "kill", "elim", "frag", "takedown", "kos" }
+    local function statLike(name)
+        return hasAny(norm(name), KILL_STAT)
+    end
+    local function hookStat(v)
+        if Kill.statVals[v] ~= nil then return end
+        Kill.statVals[v] = v.Value
+        Kill.hasStat = true
+        track(v.Changed:Connect(function(nv)
+            local oldv = Kill.statVals[v]
+            Kill.statVals[v] = nv
+            if type(nv) == "number" and type(oldv) == "number" and nv > oldv then
+                addCredit()
+            end
+        end))
+    end
+    local REMOTE_TERMS = { "kill", "elim", "knock", "defeat", "slain" }
+    local function onRemote(...)
+        local args = table.pack(...)
+        for i = 1, args.n do
+            if argIsMe(args[i], 0) then
+                Kill.hasRemote = true
+                addCredit()
+                return
+            end
+        end
+    end
+    local function hookRemotes()
+        local n, count = 0, 0
+        for _, d in ipairs(game:GetDescendants()) do
+            count = count + 1
+            if count % 3000 == 0 then task.wait() end
+            if d:IsA("RemoteEvent") and hasAny(norm(d.Name), REMOTE_TERMS) then
+                n = n + 1
+                if n > 40 then break end
+                track(d.OnClientEvent:Connect(onRemote))
+            end
+        end
+    end
+    local function initKills()
+        for _, p in ipairs(Players:GetPlayers()) do hookPlayer(p) end
+        track(Players.PlayerAdded:Connect(hookPlayer))
+        track(UIS.InputBegan:Connect(function(input)
+            local t = input.UserInputType
+            if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch
+                or t == Enum.UserInputType.Keyboard or t == Enum.UserInputType.Gamepad1 then
+                Kill.lastAct = os.clock()
+            end
+        end))
+        for _, d in ipairs(LocalPlayer:GetDescendants()) do
+            if (d:IsA("IntValue") or d:IsA("NumberValue")) and statLike(d.Name)
+                and not d:FindFirstAncestorOfClass("Backpack") then
+                hookStat(d)
+            end
+        end
+        track(LocalPlayer.DescendantAdded:Connect(function(d)
+            if (d:IsA("IntValue") or d:IsA("NumberValue")) and statLike(d.Name) then hookStat(d) end
+        end))
+        for name, val in pairs(LocalPlayer:GetAttributes()) do
+            if statLike(name) and type(val) == "number" then
+                Kill.attrVals[name] = val
+                Kill.hasStat = true
+            end
+        end
+        track(LocalPlayer.AttributeChanged:Connect(function(name)
+            if not statLike(name) then return end
+            local v = LocalPlayer:GetAttribute(name)
+            if type(v) ~= "number" then return end
+            local oldv = Kill.attrVals[name]
+            Kill.attrVals[name] = v
+            Kill.hasStat = true
+            if oldv ~= nil and v > oldv then addCredit() end
+        end))
+        task.spawn(hookRemotes)
+    end
+    local View = { token = 0, built = 0, limit = PAGE, list = {}, more = nil }
+    local cards = {}
+    local function isApplied(entry)
+                if entry.tab == "effects" then
             return Kill.entry == entry
         end
         local rec = Applied[entry.cat]
@@ -2285,137 +3148,4 @@ local function App()
             local dx, dy = floatDelta()
             Window.Position = UDim2.new(0.5, dx, 0.5, dy)
             winScale.Scale = BASE * 0.2
-        else
-            Window.Position = UDim2.new(0.5, 0, 0.5, 26)
-            winScale.Scale = BASE * 0.8
-        end
-        bgScale.Scale = 1.14
-        Left.Position = UDim2.fromOffset(-30, 52)
-        Right.Position = UDim2.fromOffset(260, 52)
-        headLine.Size = UDim2.new(0, 0, 0, 1)
-        tween(Window, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { GroupTransparency = 0 })
-        tween(winScale, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = BASE })
-        tween(Window, TweenInfo.new(0.55, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-            Position = UDim2.fromScale(0.5, 0.5),
-        })
-        tween(headLine, TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.1), {
-            Size = UDim2.new(1, 0, 0, 1),
-        })
-        tween(Left, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.08), {
-            Position = UDim2.fromOffset(10, 52),
-        })
-        tween(Right, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.16), {
-            Position = UDim2.fromOffset(210, 52),
-        })
-        tween(bgScale, TweenInfo.new(7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Scale = 1 })
-        tween(floatScale, TI_FLOAT_OUT, { Scale = 0 }).Completed:Connect(function()
-            if token == my then floatRoot.Visible = false end
-        end)
-    end
-    local function minimizeWindow()
-        token = token + 1
-        local my = token
-        -- Quitar blur al cerrar interfaz
-        if blurEffect then
-            tween(blurEffect, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = 0 })
-        end
-        if not floatPlaced then
-            local vp = UI.viewport()
-            local cx = Root.Position.X.Offset + (W * BASE) / 2 - FS / 2
-            local cy = Root.Position.Y.Offset + (H * BASE) / 2 - FS / 2
-            floatRoot.Position = UDim2.fromOffset(
-                math.clamp(cx, 0, math.max(0, vp.X - FS)),
-                math.clamp(cy, 0, math.max(0, vp.Y - FS))
-            )
-            floatPlaced = true
-        end
-        floatRoot.Visible = true
-        floatScale.Scale = 0
-        local dx, dy = floatDelta()
-        tween(Window, TI_CLOSE, { GroupTransparency = 1, Position = UDim2.new(0.5, dx, 0.5, dy) })
-        tween(winScale, TI_CLOSE, { Scale = BASE * 0.2 }).Completed:Connect(function()
-            if token == my then
-                Root.Visible = false
-                Window.Position = UDim2.fromScale(0.5, 0.5)
-            end
-        end)
-        tween(floatScale, TweenInfo.new(0.34, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, 0.12), { Scale = 1 })
-    end
-    UI.draggable(floatBtn, floatRoot, openWindow,
-        function()
-            tween(floatScale, TweenInfo.new(0.1), { Scale = 0.92 })
-        end,
-        function()
-            tween(floatScale, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
-        end)
-    btnMin.MouseButton1Click:Connect(minimizeWindow)
-    local function destroyAll()
-        local cats = {}
-        for cat in pairs(Applied) do cats[#cats + 1] = cat end
-        for _, cat in ipairs(cats) do pcall(dropWeapon, cat) end
-        if SkinLoop.conn then
-            SkinLoop.conn:Disconnect()
-            SkinLoop.conn = nil
-        end
-        Kill.entry = nil
-        if Kill.folder then pcall(function() Kill.folder:Destroy() end) end
-        if projFolderObj then pcall(function() projFolderObj:Destroy() end) end
-        Spin.cam = nil
-        for _, c in ipairs(conns) do pcall(function() c:Disconnect() end) end
-        conns = {}
-        if blurEffect then pcall(function() blurEffect:Destroy() end) end
-        if gui then gui:Destroy() end
-        env.NexvyrToolsVisualCleanup = nil
-    end
-    env.NexvyrToolsVisualCleanup = destroyAll
-    btnClose.MouseButton1Click:Connect(function()
-        Modal.show({
-            title = "Realmente quieres cerrar?",
-            text = "Si cierras la GUI por completo tendras que ejecutar el script otra vez.",
-            leftText = "Abrir denuevo", leftStyle = "main",
-            rightText = "Cerrar Gui", rightStyle = "danger",
-            onRight = function()
-                tween(winScale, TI_CLOSE, { Scale = BASE * 0.85 })
-                tween(Window, TI_CLOSE, { GroupTransparency = 1 }).Completed:Connect(destroyAll)
-            end,
-        })
-    end)
-    updateLabels()
-    setTab("knives")
-    initKills()
-    task.spawn(runScan)
-
-    -- ========== INTRO con imagen + musica (5s imagen, 7s musica con fade) ==========
-    local introDone = false
-    local function runIntro()
-        local introGui = Instance.new("ScreenGui")
-        introGui.Name = "PxzdIntro"
-        introGui.IgnoreGuiInset = true
-        introGui.DisplayOrder = 10000
-        introGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        introGui.ResetOnSpawn = false
-        introGui.Parent = parent
-
-        -- Solo la imagen, sin recuadro negro, pantalla completa
-        local introImg = Instance.new("ImageLabel")
-        introImg.Name = "IntroImage"
-        introImg.Size = UDim2.fromScale(1, 1)
-        introImg.Position = UDim2.fromScale(0, 0)
-        introImg.BackgroundTransparency = 1
-        introImg.BorderSizePixel = 0
-        introImg.ScaleType = Enum.ScaleType.Fit  -- Fit para que no se recorte mal
-        introImg.ImageTransparency = 1
-        introImg.ZIndex = 10
-        introImg.Parent = introGui
-
-        -- Aplicar la imagen del logo (tu imagen)
-        Logo.onReady(function(image)
-            if introImg and introImg.Parent then
-                introImg.Image = image
-            end
-        end)
-        -- Fallback inmediato
-        introImg.Image = "rbxassetid://" .. tostring(LOGO_ID)
-
-        -- Musica
-        local music = Instance.
+            
